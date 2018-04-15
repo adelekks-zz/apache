@@ -1,0 +1,27 @@
+---
+- name: Installing Latest version of Apache
+  yum: pkg=httpd state=latest
+
+- name: Copying the demo file
+  template: src=index.html.j2 dest=/var/www/html/index.html
+    owner=apache group=apache mode=0644
+  notify:
+  - start apache
+
+- name: (Enable it on System Boot)
+  service: name=httpd state=started enabled=yes
+
+- name: Open firewall ports
+  firewalld: port={{ item }}/tcp permanent=true state=enabled
+  with_items:
+  - 80
+  - 443
+  become: True
+
+- name: reStart firewall service
+  service: name={{ item }} state=restarted enabled=yes
+  with_items:
+  - firewalld
+  become: True
+  register: firewall
+- debug: var=firewall
